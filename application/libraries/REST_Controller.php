@@ -1,10 +1,5 @@
 <?php
 
-namespace Restserver\Libraries;
-use CI_Controller;
-use Exception;
-use stdClass;
-
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
@@ -412,15 +407,15 @@ abstract class REST_Controller extends CI_Controller {
         $this->get_local_config($config);
 
         // At present the library is bundled with REST_Controller 2.5+, but will eventually be part of CodeIgniter (no citation)
-        //if(class_exists('Format'))
-        //{
-        //    $this->format = new Format();
-        //}
-        //else
-        //{
-        //    $this->load->library('Format', NULL, 'libraryFormat');
-        //    $this->format = $this->libraryFormat;
-        //}
+        if(class_exists('Format'))
+        {
+            $this->format = new Format();
+        }
+        else
+        {
+            $this->load->library('Format', NULL, 'libraryFormat');
+            $this->format = $this->libraryFormat;
+        }
 
 
         // Determine supported output formats from configuration
@@ -507,18 +502,11 @@ abstract class REST_Controller extends CI_Controller {
             $this->{'_'.$this->request->method.'_args'} = [];
         }
 
-        // Which format should the data be returned in?
-        $this->response->format = $this->_detect_output_format();
-
-        // Which language should the data be returned in?
-        $this->response->lang = $this->_detect_lang();
-
         // Now we know all about our request, let's try and parse the body if it exists
         if ($this->request->format && $this->request->body)
         {
-            $this->request->body = Format::factory($this->request->body, $this->request->format)->to_array();
-		    
-	    // Assign payload arguments to proper method container
+            $this->request->body = $this->format->factory($this->request->body, $this->request->format)->to_array();
+            // Assign payload arguments to proper method container
             $this->{'_'.$this->request->method.'_args'} = $this->request->body;
         }
 
@@ -536,6 +524,12 @@ abstract class REST_Controller extends CI_Controller {
             $this->_delete_args,
             $this->{'_'.$this->request->method.'_args'}
         );
+
+        // Which format should the data be returned in?
+        $this->response->format = $this->_detect_output_format();
+
+        // Which language should the data be returned in?
+        $this->response->lang = $this->_detect_lang();
 
         // Extend this function to apply additional checking early on in the process
         $this->early_checks();
@@ -846,17 +840,17 @@ abstract class REST_Controller extends CI_Controller {
         	elseif ($data !== NULL)
         	{
             	// If the format method exists, call and return the output in that format
-            	if (method_exists(Format::class, 'to_' . $this->response->format))
+            	if (method_exists($this->format, 'to_' . $this->response->format))
             	{
                 	// Set the format header
                 	$this->output->set_content_type($this->_supported_formats[$this->response->format], strtolower($this->config->item('charset')));
-                	$output = Format::factory($data)->{'to_' . $this->response->format}();
+                	$output = $this->format->factory($data)->{'to_' . $this->response->format}();
 
                 	// An array must be parsed as a string, so as not to cause an array to string error
                 	// Json is the most appropriate form for such a data type
                 	if ($this->response->format === 'array')
                 	{
-                    	$output = Format::factory($output)->{'to_json'}();
+                    	$output = $this->format->factory($output)->{'to_json'}();
                 	}
             	}
             	else
@@ -864,7 +858,7 @@ abstract class REST_Controller extends CI_Controller {
                 	// If an array or object, then parse as a json, so as to be a 'string'
                 	if (is_array($data) || is_object($data))
                 	{
-                    	$data = Format::factory($data)->{'to_json'}();
+                    	$data = $this->format->factory($data)->{'to_json'}();
                 	}
 
                 	// Format is not supported, so output the raw data as a string
@@ -2339,23 +2333,9 @@ abstract class REST_Controller extends CI_Controller {
             }
         }
 
-        // If there are headers that should be forced in the CORS check, add them now
-        if (is_array($this->config->item('forced_cors_headers')))
-        {
-            foreach ($this->config->item('forced_cors_headers') as $header => $value)
-            {
-                header($header . ': ' . $value);
-            }
-        }
-
         // If the request HTTP method is 'OPTIONS', kill the response and send it to the client
         if ($this->input->method() === 'options')
         {
-            // Load DB if needed for logging
-            if (!isset($this->rest->db) && $this->config->item('rest_enable_logging'))
-            {
-                $this->rest->db = $this->load->database($this->config->item('rest_database_group'), TRUE);
-            }
             exit;
         }
     }

@@ -1,6 +1,4 @@
 <?php
-namespace Restserver\Libraries;
-use Exception;
 
 defined('BASEPATH') OR exit('No direct script access allowed');
 
@@ -116,7 +114,7 @@ class Format {
      *
      * @return object Instance of the format class
      */
-    public static function factory($data, $from_type = NULL)
+    public function factory($data, $from_type = NULL)
     {
         // $class = __CLASS__;
         // return new $class();
