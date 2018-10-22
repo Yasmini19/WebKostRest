@@ -12,17 +12,9 @@ class Rest_Kost extends REST_Controller
     {
         $id = $this->get('id_kost');
         if ($id == '')
-        {
-            //$this->db->select('*');       
-            $this->db->select('id_kost, kost.id_user, nama_kost, jenis_kost, fasilitas, harga, alamat_kost, stok, foto, longitude, latitude, kost.no_tlp');
-            $this->db->join('tabel_user', 'kost.id_user = tabel_user.id_user');
-            $kos = $this->db->get('kost')->result();
-        }
+        { $kos = $this->db->get('kost')->result(); }
         else
         {
-            //$this->db->select('*');
-            $this->db->select('id_kost, kost.id_user, nama_kost, jenis_kost, fasilitas, harga, alamat_kost, stok, foto, longitude, latitude, kost.no_tlp');
-            $this->db->join('tabel_user', 'kost.id_user = tabel_user.id_user');
             $this->db->where('id_kost', $id);
             $kos = $this->db->get('kost')->row();
         }
@@ -63,7 +55,7 @@ class Rest_Kost extends REST_Controller
             'stok' => $this->put('stok'),
             'longitude' => $this->put('longitude'),
             'latitude' => $this->put('latitude'),
-            'no_tlp' => $this->put('no_telp')
+            'no_tlp' => $this->put('no_tlp')
         );
 
         $this->db->where('id_kost', $id);
